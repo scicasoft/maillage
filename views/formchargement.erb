@@ -1,0 +1,18 @@
+<h1>Chargement des fichiers</h1>
+<form action="/chargement" method="post">
+  <h3>entrez le fichier des triangles</h3>
+  <input type='file' name='fichier_triangles' required/>
+  <h3>entrez le fichier des points</h3>
+  <input type='file' name='fichier_points' required/>
+  <h3>Delaunay : </h3>
+  <input type="radio" name="delaunay" value="0" checked required> faire maillage simple<br/>
+  <input type="radio" name="delaunay" value="1" required> faire maillage delaunay
+  <h3>Cercle circonscrit : </h3>
+  <input type="radio" name="tracer_cercles" value="0" checked required> ne pas tracer les cercles<br/>
+  <input type="radio" name="tracer_cercles" value="1" required> tracer les cercles
+  <br/><br/>
+  <div class='form_boutons'>
+    <input type="submit" value="VALIDER" class='bouton'/>
+    <a class='bouton' href='/'>ANNULER</a>
+  </div>
+</form>

@@ -1,0 +1,71 @@
+<h1>Maillage du polygone<h1>
+
+<h3>p : <%= @polygone.p %>, pas de maillage : <%= @polygone.pas_maillage%>, <%= @polygone.maillage_triangles.length %> triangles et <%= @polygone.maillage_points.length %> points</h3>
+<h3>dur&eacute;e traitement : <%= @duree %> secondes</h3>
+
+<center>
+  <canvas id="dessin"></canvas>
+</center>
+
+<div class="form_boutons">
+  <a class='bouton' href='/ajout_objet'>retour</a>
+</div>
+
+<script type="text/javascript" language="javascript">
+  var longueur = <%= @longueur %>;
+  var hauteur = <%= @hauteur %>;
+  var minX = <%= @minX %>
+  var maxX = <%= @maxX %>
+  var minY = <%= @minY %>
+  var maxY = <%= @maxY %>
+  // le nombre de pixel par unit? sur les abscisses
+  var uX = longueur/(maxX-minX);
+  // le nombre de pixel par unit? sur les ordonn?s
+  var uY = hauteur/(maxY-minY);
+
+  var canvas = document.getElementById("dessin");
+
+  //ON VERIFIE SI LE NAVIGATEUR PEUT GERER LES CANVAS
+  if(canvas.getContext) {
+    var contexte = canvas.getContext('2d');
+    //ON DEFINIT LA TAILLE DU CANVAS
+    canvas.setAttribute("width", longueur);
+    canvas.setAttribute("height", hauteur);
+
+    //LA COULEUR DES AXES
+    contexte.strokeStyle = "black";    
+
+    //FIN DESSIN DES AXES
+    contexte.stroke();
+
+    //DEBUT TRACE DE LA FONCTION
+    contexte.strokeStyle = "green";
+
+    contexte.beginPath();
+    <%= @polygone.to_graphe_js %>
+    contexte.stroke();
+    
+    <%= @polygone.triangles.collect{|t| t.tracer_cercle_circonscrit}.join if params[:tracer_cercles] == "1" %>
+  } else {
+
+    //SI LE NAVIGATEUR N'EST PAS COMPATIBLE
+    alert("c'est pas compatible avec votre navigateur");
+  }
+  
+  function circle(x, y, r) {
+    contexte.beginPath();
+    contexte.arc(X(x, y),Y(x, y), r*uX, 0,2*Math.PI, false);
+    contexte.strokeStyle = "yellow";
+    contexte.stroke();
+  }
+
+  //LA VALEUR DU x(PIXEL) D'UN POINT
+  function X(x, y) {
+    return (x-minX)*uX;
+  }
+
+  //LA VALEUR DU y(PIXEL) D'UN POINT
+  function Y(x, y) {
+    return (maxY-y)*uY;
+  }
+</script>

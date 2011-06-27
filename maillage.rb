@@ -1,0 +1,7 @@
+require 'sinatra'
+require 'erb'
+require 'sass'
+require 'maillage/point'
+require 'maillage/triangle'
+require 'maillage/polygone'
+require 'maillage/routes'

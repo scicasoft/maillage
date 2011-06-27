@@ -1,0 +1,38 @@
+<h1>Ajout d'un polygone</h1>
+<form action="/mailler" method="post">
+  <h3>pas de maillage : </h3>
+  <input type="radio" name="pas" value="1" required checked> pas de maillage : <input type="number" name="pas_maillage" value=1 min="0.0001" step="0.1"><br/>
+  <input type="radio" name="pas" value="2" required> p : <input type="number" name="p" value=2 min="2">
+  <h3>Delaunay : </h3>
+  <input type="radio" name="delaunay" value="0" checked required> faire maillage simple<br/>
+  <input type="radio" name="delaunay" value="1" required> faire maillage delaunay
+  <h3>Cercle circonscrit : </h3>
+  <input type="radio" name="tracer_cercles" value="0" checked required> ne pas tracer les cercles<br/>
+  <input type="radio" name="tracer_cercles" value="1" required> tracer les cercles
+  <h3>Nombre de points : </h3>
+  <select name="nombre_point" id="nombre_point">
+    <% 50.times do |i| %>
+      <option value="<%= i+3 %>"><%= i+3 %></option>
+    <% end %>
+  </select>
+  <div id='edit_points'></div>
+  <div class='form_boutons'>
+    <input type="submit" value="VALIDER" class='bouton'/>
+    <a class='bouton' href='/'>ANNULER</a>
+  </div>
+</form>
+
+
+<script type="text/javascript">
+  $(document).ready(function(){
+    function affiche_points(taille) {
+      $("#edit_points").load("/get_points/"+taille);
+    }
+
+    $("#nombre_point").change(function() {
+      affiche_points($(this).val());
+    });
+
+    affiche_points($("#nombre_point").val());
+  });
+</script>
