@@ -21,7 +21,7 @@ post '/mailler' do
   
   choix == "1" ? @polygone.mailler({:pas_maillage => params[:pas_maillage].to_f}) : @polygone.mailler({:p => params[:p].to_i})
   
-  while !@polygone.delaunay do end if params[:delaunay] == "1"
+  @polygone.delaunay if params[:delaunay] == "1"
   
   fts, fps = File.open("sortie/sortie_triangles.txt", 'w'), File.open("sortie/sortie_points.txt", 'w')
   
@@ -66,7 +66,7 @@ post '/chargement' do
     @polygone.ajouter_triangle_maillage Triangle.new([@polygone.points[n1], @polygone.points[n2], @polygone.points[n3]])
   }
   
-  while !@polygone.delaunay do end if params[:delaunay] == "1"
+  @polygone.delaunay if params[:delaunay] == "1"
   
   t2 = Time.now
   

@@ -8,7 +8,8 @@ class Polygone
                 :maxx,
                 :maxy,
                 :p,
-                :pas_maillage
+                :pas_maillage,
+                :frontiere
   
   def initialize(points = [])
     @points = points
@@ -89,7 +90,19 @@ class Polygone
     @maillage_triangles = @triangles.collect{|t| "#{@maillage_points.index(t.p1.to_s)+1} #{@maillage_points.index(t.p2.to_s)+1} #{@maillage_points.index(t.p3.to_s)+1}"}
   end
   
-  #corrige et retourne false s'il trouve une erreur et true sinon
+  def determiner_frontiere
+    point_to_triangles = []
+    (@maillage_points.length+1).times do
+      point_to_triangles << []
+    end
+    @triangles.length.times do |i|
+      t = @triangles[i]
+      point_to_triangles[t.p1.num] << i
+      point_to_triangles[t.p2.num] << i
+      point_to_triangles[t.p3.num] << i
+    end
+  end
+  
   def delaunay
     point_to_triangles = []
     (@maillage_points.length+1).times do
@@ -120,7 +133,7 @@ class Polygone
           pA, pB, pC, pD = @points[t.p3.num-1], @points[t.p1.num-1], @points[t.p2.num-1], @points[t_opp.points[pt].num-1]
           @triangles[i] = Triangle.new([pA, pB, pD])
           @triangles[numt] = Triangle.new([pA, pC, pD])
-          return false
+          return delaunay
         end
       end
 
@@ -136,7 +149,7 @@ class Polygone
           #pA, pB, pC, pD = t.p2, t.p1, t.p3, t_opp.points[pt]
           @triangles[i] = Triangle.new([pA, pB, pD])
           @triangles[numt] = Triangle.new([pA, pC, pD])
-          return false
+          return delaunay
         end
       end
       
@@ -152,11 +165,10 @@ class Polygone
           #pA, pB, pC, pD = t.p1, t.p2, t.p3, t_opp.points[pt]
           @triangles[i] = Triangle.new([pA, pB, pD])
           @triangles[numt] = Triangle.new([pA, pC, pD])
-          return false
+          return delaunay
         end
       end
     end
-    return true
   end
 
   def to_graphe_js
