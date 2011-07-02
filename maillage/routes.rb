@@ -62,7 +62,8 @@ post '/chargement' do
   }
   
   fts.each_line { |l|
-    n1, n2, n3 = l.split[0].to_i-1, l.split[1].to_i-1, l.split[2].to_i-1
+    liste_points = l.split
+    n1, n2, n3 = liste_points[0].to_i-1, liste_points[1].to_i-1, liste_points[2].to_i-1
     @polygone.ajouter_triangle_maillage Triangle.new([@polygone.points[n1], @polygone.points[n2], @polygone.points[n3]])
   }
   

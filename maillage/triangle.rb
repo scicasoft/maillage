@@ -8,7 +8,7 @@ class Triangle
   end
 
   def to_s
-    "#{@points[0].num} #{@points[1].num} #{@points[2].num}"
+    "#{p1.num} #{p2.num} #{p3.num}"
   end
   
   def p1
@@ -41,6 +41,22 @@ class Triangle
     y = yI+(x-xI)*((xA-xB)/(yB-yA))
     
     Point.new(x, y)
+  end
+  
+  def rayon_cercle_circonscrit
+    centre_cercle_circonscrit.distance(p1)
+  end
+  
+  def cercle_circonscrit_contient_point? p
+    p.distance(centre_cercle_circonscrit) < rayon_cercle_circonscrit
+  end
+  
+  def num_point_en_face t
+    tab = [p1.num, p2.num, p3.num]
+    return 0 unless tab.include?(t.p1.num)
+    return 1 unless tab.include?(t.p2.num)
+    return 2 unless tab.include?(t.p3.num)
+    return -1
   end
   
   def max_length

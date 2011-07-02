@@ -14,15 +14,8 @@ class Polygone
   def initialize(points = [])
     @points = points
   end
-
-  def ajouter_point point
-    @points << point
-  end
   
-  def ajouter_point_maillage point
-    @maillage_points ||= []
-    @maillage_points << point.to_s
-    @points << point
+  def evaluer_zone_repere point
     @minx ||= point.x
     @miny ||= point.y
     @maxx ||= point.x
@@ -33,13 +26,25 @@ class Polygone
     @maxy = [point.y, @maxy].max
   end
 
+  def ajouter_point point
+    @points << point
+    evaluer_zone_repere point
+  end
+  
+  def ajouter_point_maillage point
+    @maillage_points ||= []
+    @maillage_points << point.to_s
+    @points << point
+    evaluer_zone_repere point
+  end
+
   def ajouter_triangle_maillage triangle
     @pas_maillage ||= 0
     @maillage_triangles ||= []
     @triangles ||= []
     @triangles << triangle
     @pas_maillage = [@pas_maillage, triangle.max_length].max
-    @maillage_triangles << "#{triangle.p1.num} #{triangle.p2.num} #{triangle.p3.num}"
+    @maillage_triangles << triangle.to_s#"#{triangle.p1.num} #{triangle.p2.num} #{triangle.p3.num}"
   end
   
   def decoupage_triangles
@@ -64,14 +69,9 @@ class Polygone
     triangles.each {|t| @triangles += t.mailler(@p)}
     
     t = @triangles.first
-    @minx, @miny, @maxx, @maxy = t.p1.x, t.p1.y, t.p1.x, t.p1.y
     @maillage_points = []
     @triangles.each do |t|
       @maillage_points << t.p1.to_s << t.p2.to_s << t.p3.to_s
-      @minx = [t.p1.x, t.p2.x, t.p3.x, @minx].min
-      @maxx = [t.p1.x, t.p2.x, t.p3.x, @maxx].max
-      @miny = [t.p1.y, t.p2.y, t.p3.y, @miny].min
-      @maxy = [t.p1.y, t.p2.y, t.p3.y, @maxy].max
     end
     @maillage_points.uniq!
     @points = []
@@ -87,88 +87,80 @@ class Polygone
       @triangles[i].points[2] = @points[tassoc[@triangles[i].p3.to_s]-1]
     end
     
-    @maillage_triangles = @triangles.collect{|t| "#{@maillage_points.index(t.p1.to_s)+1} #{@maillage_points.index(t.p2.to_s)+1} #{@maillage_points.index(t.p3.to_s)+1}"}
+    @maillage_triangles = @triangles.collect{|t| "#{tassoc[t.p1.to_s]} #{tassoc[t.p2.to_s]} #{tassoc[t.p3.to_s]}"}
+  end  
+  
+  #utilisée par delaunay cette methode permet de modifier la position des triangles d'indices it1 et it2 avec it1 et it2 les numeros des deux points d'en face et it3 et it4 les numeros des points de la diagonale
+  def delaunay_correction it1, it2, p1, p2, p3, p4
+    t1, t2 = @triangles[it1], @triangles[it2]
+    @point_to_triangles[t1.p1.num]-=[it1]
+    @point_to_triangles[t1.p2.num]-=[it1]
+    @point_to_triangles[t1.p3.num]-=[it1]
+          
+    @point_to_triangles[t2.p1.num]-=[it2]
+    @point_to_triangles[t2.p2.num]-=[it2]
+    @point_to_triangles[t2.p3.num]-=[it2]
+    
+    pA, pD, pB, pC = @points[p1-1], @points[p2-1], @points[p3-1], @points[p4-1]
+    @triangles[it1] = Triangle.new([pA, pB, pD])
+    @triangles[it2] = Triangle.new([pA, pC, pD])
+    
+    t1, t2 = @triangles[it1], @triangles[it2]
+    @point_to_triangles[t1.p1.num]+=[it1]
+    @point_to_triangles[t1.p2.num]+=[it1]
+    @point_to_triangles[t1.p3.num]+=[it1]
+          
+    @point_to_triangles[t2.p1.num]+=[it2]
+    @point_to_triangles[t2.p2.num]+=[it2]
+    @point_to_triangles[t2.p3.num]+=[it2]
   end
   
-  def determiner_frontiere
-    point_to_triangles = []
-    (@maillage_points.length+1).times do
-      point_to_triangles << []
-    end
-    @triangles.length.times do |i|
-      t = @triangles[i]
-      point_to_triangles[t.p1.num] << i
-      point_to_triangles[t.p2.num] << i
-      point_to_triangles[t.p3.num] << i
-    end
-  end
-  
+  #transforme le maillage en maillage de type delaunay
+  #30 => 30 secondes
   def delaunay
-    point_to_triangles = []
-    (@maillage_points.length+1).times do
-      point_to_triangles << []
-    end
-    @triangles.length.times do |i|
-      t = @triangles[i]
-      point_to_triangles[t.p1.num] << i
-      point_to_triangles[t.p2.num] << i
-      point_to_triangles[t.p3.num] << i
-    end
+    restart = false
+    @point_to_triangles = identifier_triangle_points
 
     @triangles.length.times do |i|
       t = @triangles[i]
-      tab = [t.p1.num, t.p2.num, t.p3.num]
-      t1 = point_to_triangles[t.p1.num]-[i]
-      t2 = point_to_triangles[t.p2.num]-[i]
-      t3 = point_to_triangles[t.p3.num]-[i]
+      t1 = @point_to_triangles[t.p1.num]-[i]
+      t2 = @point_to_triangles[t.p2.num]-[i]
+      t3 = @point_to_triangles[t.p3.num]-[i]
+      
+      rayon = t.rayon_cercle_circonscrit
+      centre = t.centre_cercle_circonscrit
 
       unless (t1 & t2).empty?
         numt = (t1 & t2).first
         t_opp = @triangles[numt]
-        pt = 0 unless tab.include?(t_opp.p1.num)
-        pt = 1 unless tab.include?(t_opp.p2.num)
-        pt = 2 unless tab.include?(t_opp.p3.num)
-        centre = t.centre_cercle_circonscrit
-        if t_opp.points[pt].distance(centre) < t.p1.distance(centre)
-          pA, pB, pC, pD = @points[t.p3.num-1], @points[t.p1.num-1], @points[t.p2.num-1], @points[t_opp.points[pt].num-1]
-          @triangles[i] = Triangle.new([pA, pB, pD])
-          @triangles[numt] = Triangle.new([pA, pC, pD])
-          return delaunay
+        pt = t.num_point_en_face t_opp
+        if centre.distance(t_opp.points[pt]) < rayon
+          delaunay_correction i, numt, t.p3.num, t_opp.points[pt].num, t.p1.num, t.p2.num
+          restart = true
         end
       end
 
       unless (t1 & t3).empty?
         numt = (t1 & t3).first
         t_opp = @triangles[numt]
-        pt = 0 unless tab.include?(t_opp.p1.num)
-        pt = 1 unless tab.include?(t_opp.p2.num)
-        pt = 2 unless tab.include?(t_opp.p3.num)
-        centre = t.centre_cercle_circonscrit
-        if t_opp.points[pt].distance(centre) < t.p1.distance(centre)
-          pA, pB, pC, pD = @points[t.p2.num-1], @points[t.p1.num-1], @points[t.p3.num-1], @points[t_opp.points[pt].num-1]
-          #pA, pB, pC, pD = t.p2, t.p1, t.p3, t_opp.points[pt]
-          @triangles[i] = Triangle.new([pA, pB, pD])
-          @triangles[numt] = Triangle.new([pA, pC, pD])
-          return delaunay
+        pt = t.num_point_en_face t_opp
+        if centre.distance(t_opp.points[pt]) < rayon
+          delaunay_correction i, numt, t.p2.num, t_opp.points[pt].num, t.p1.num, t.p3.num
+          restart = true
         end
       end
       
       unless (t2 & t3).empty?
         numt = (t2 & t3).first
         t_opp = @triangles[numt]
-        pt = 0 unless tab.include?(t_opp.p1.num)
-        pt = 1 unless tab.include?(t_opp.p2.num)
-        pt = 2 unless tab.include?(t_opp.p3.num)
-        centre = t.centre_cercle_circonscrit
-        if t_opp.points[pt].distance(centre) < t.p1.distance(centre)
-          pA, pB, pC, pD = @points[t.p1.num-1], @points[t.p2.num-1], @points[t.p3.num-1], @points[t_opp.points[pt].num-1]
-          #pA, pB, pC, pD = t.p1, t.p2, t.p3, t_opp.points[pt]
-          @triangles[i] = Triangle.new([pA, pB, pD])
-          @triangles[numt] = Triangle.new([pA, pC, pD])
-          return delaunay
+        pt = t.num_point_en_face t_opp
+        if centre.distance(t_opp.points[pt]) < rayon
+          delaunay_correction i, numt, t.p1.num, t_opp.points[pt].num, t.p2.num, t.p3.num
+          restart = true
         end
       end
     end
+    delaunay if restart
   end
 
   def to_graphe_js
@@ -184,5 +176,22 @@ class Polygone
       html += "</table>"
     end
     html
+  end
+  
+  private
+  
+  #permet d'itentifier pour chaque point les triangles qui l'utilisent
+  def identifier_triangle_points
+    point_to_triangles = []
+    (@maillage_points.length+1).times do
+      point_to_triangles << []
+    end
+    @triangles.length.times do |i|
+      t = @triangles[i]
+      point_to_triangles[t.p1.num] << i
+      point_to_triangles[t.p2.num] << i
+      point_to_triangles[t.p3.num] << i
+    end
+    return point_to_triangles
   end
 end
